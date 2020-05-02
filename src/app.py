@@ -1,4 +1,4 @@
-from flask import Flask, url_for, render_template, request, send_file, redirect, jsonify
+from flask import Flask, request, send_file, jsonify, abort, render_template
 from playhouse.shortcuts import model_to_dict
 import database
 import random
@@ -9,7 +9,7 @@ import confparser
 config = confparser.get("config.json")
 chess_util = ChessUtil(config.lichess_token)
 db = database.DB()
-app = Flask("dchess")
+app = Flask("dchess", template_folder="src/templates")
 
 
 @app.route('/dchess/api/get_match', methods=['POST'])
@@ -118,8 +118,7 @@ def handle_invalid_usage(error):
 
 @app.errorhandler(404)
 def not_found(e):
-    pass
-
+    return render_template("404.html")
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=1338)
