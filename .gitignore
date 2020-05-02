@@ -3,3 +3,6 @@ venv
 config.json
 misc
 __pycache__
+test.py
+*.db
+*.log

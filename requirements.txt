@@ -2,3 +2,4 @@ python-chess
 cairosvg
 berserk
 Flask
+peewee
