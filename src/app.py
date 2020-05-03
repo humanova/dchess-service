@@ -52,6 +52,21 @@ def update_match():
         return jsonify(dict(success=False))
 
 
+@app.route('/dchess/api/update_match_end', methods=['POST'])
+def update_match_end():
+    id = request.json["match_id"]
+    try:
+        m = db.get_match_by_id(id)
+        if m is not None:
+            match_data = chess_util.get_game_data(id=id)
+            updated_data = db.update_match_end(match_id=id, data=match_data)
+            return jsonify(dict(success=True, data=updated_data))
+        else:
+            return jsonify(dict(success=False, reason="invalid match id"))
+    except:
+        return jsonify(dict(success=False))
+
+
 @app.route('/dchess/api/create_match', methods=['POST'])
 def create_match():
     user_id = request.json['user_id']
@@ -60,15 +75,20 @@ def create_match():
     opponent_nick = request.json['opponent_nick']
     guild_id = request.json['guild_id']
 
+    # bunch of db checks :(
+    # todo : pls fix
     if db.get_guild_by_id(guild_id) is None:
         db.add_guild(guild_id)
 
     if db.get_player_by_id(user_id) is None:
         db.add_player(player_id=user_id, player_nick=user_nick)
+    if db.get_guild_player_by_id(guild_id=guild_id, player_id=user_id) is None:
+        db.add_guild_player(guild_id=guild_id, player_id=user_id)
 
     if db.get_player_by_id(opponent_id) is None:
         db.add_player(player_id=opponent_id, player_nick=opponent_nick)
-
+    if db.get_guild_player_by_id(guild_id=guild_id, player_id=opponent_id) is None:
+        db.add_guild_player(guild_id=guild_id, player_id=opponent_id)
     try:
         game = chess_util.client.challenges.create_open(clock_limit=300, clock_increment=3)
         id = game['challenge']['id']
