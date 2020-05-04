@@ -75,6 +75,15 @@ def create_match():
     opponent_nick = request.json['opponent_nick']
     guild_id = request.json['guild_id']
 
+    clock_limit = None
+    clock_increment = None
+    try:
+        if request.json['clock_minutes'] and request.json['clock_minutes']:
+            clock_limit = request.json['clock_minutes'] * 60
+            clock_increment = request.json['clock_increment']
+    except:
+        pass
+
     # bunch of db checks :(
     # todo : pls fix
     if db.get_guild_by_id(guild_id) is None:
@@ -90,7 +99,7 @@ def create_match():
     if db.get_guild_player_by_id(guild_id=guild_id, player_id=opponent_id) is None:
         db.add_guild_player(guild_id=guild_id, player_id=opponent_id)
     try:
-        game = chess_util.client.challenges.create_open(clock_limit=300, clock_increment=3)
+        game = chess_util.client.challenges.create_open(clock_limit=clock_limit, clock_increment=clock_increment)
         id = game['challenge']['id']
         db_match = db.add_match(match_id=id, guild_id=guild_id)
         return jsonify(dict(success=True, match=game, db_match = model_to_dict(db.get_match_by_id(id))))
@@ -118,15 +127,39 @@ def get_match_preview(game_id, move):
 @app.route('/dchess/api/get_player', methods=['POST'])
 def get_player():
     id = request.json["player_id"]
+    guild_id = None
     try:
-        player = db.get_player_by_id(id)
-        if player is not None:
-            return jsonify(dict(success=True, player=model_to_dict(player)))
+        if request.json["guild_id"]:
+            guild_id = request.json["guild_id"]
+    except:
+        pass
+    try:
+        stats = db.get_player_stats(player_id=id, guild_id=guild_id)
+        if stats is not None:
+            if guild_id:
+                return jsonify(dict(success=True, player=stats['player'], guild_player=stats['guild_player']))
+            else:
+                return jsonify(dict(success=True, player=stats['player']))
         else:
             return jsonify(dict(success=False, reason="invalid match id"))
     except Exception as e:
         print(e)
         return jsonify(dict(success=False))
+
+
+@app.route('/dchess/api/get_guild', methods=['POST'])
+def get_guild():
+    guild_id = request.json["guild_id"]
+    try:
+        stats = db.get_guild_stats(guild_id=guild_id)
+        if stats is not None:
+            return jsonify(dict(success=True, guild=stats))
+        else:
+            return jsonify(dict(success=False, reason="invalid match id"))
+    except Exception as e:
+        print(e)
+        return jsonify(dict(success=False))
+
 
 @app.errorhandler(exceptions.InvalidUsage)
 @app.errorhandler(exceptions.InternalError)

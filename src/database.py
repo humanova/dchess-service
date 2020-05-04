@@ -158,7 +158,6 @@ class DB:
             else:
                 # todo : throw exception or smth instead of logging shit
                 pass
-
         except Exception as e:
             logging.exception(f'[DB] Error while updating match(end):{match_id} {e}')
 
@@ -206,15 +205,43 @@ class DB:
         except Exception as e:
             logging.exception(f'[DB] Error while updating players:{white_pl.id}, {black_pl.id} {e}')
 
+    def get_player_stats(self, player_id, guild_id=None):
+        try:
+            pl = self.get_player_by_id(player_id)
+            stats = dict()
+            stats.update(player= model_to_dict(pl))
+            if guild_id:
+                pl_guild = self.get_guild_player_by_id(player_id=player_id, guild_id=guild_id)
+                stats.update(guild_player=model_to_dict(pl_guild))
+            return stats
+        except Exception as e:
+            logging.exception(f'[DB] Error while getting player stats:{player_id} {e}')
+
+    def get_guild_stats(self, guild_id):
+        try:
+            players = self.get_guild_players_by_id(guild_id)
+            return [model_to_dict(p) for p in players]
+        except Exception as e:
+            logging.exception(f'[DB] Error while getting guild stats:{guild_id} {e}')
+
     def get_player_by_id(self, player_id):
         try:
-           return Player.select().where(Player.id == player_id).get()
+            return Player.select().where(Player.id == player_id).get()
+        except:
+            return None
+
+    def get_guild_players_by_id(self, guild_id):
+        try:
+            players = []
+            for pl in GuildPlayer.select().where(GuildPlayer.guild_id == guild_id):
+                players.append(pl)
+            return players
         except:
             return None
 
     def get_guild_player_by_id(self, guild_id, player_id):
         try:
-           return GuildPlayer.select().where(GuildPlayer.player_id == player_id, GuildPlayer.guild_id == guild_id).get()
+            return GuildPlayer.select().where(GuildPlayer.player_id == player_id, GuildPlayer.guild_id == guild_id).get()
         except:
             return None
 
