@@ -2,7 +2,6 @@ from flask import Flask, request, send_file, jsonify, abort, render_template
 from playhouse.shortcuts import model_to_dict
 import database
 import random
-import exceptions
 from utils import ChessUtil
 import confparser
 
