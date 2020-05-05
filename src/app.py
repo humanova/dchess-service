@@ -31,8 +31,6 @@ def get_match():
 
 @app.route('/dchess/api/update_match', methods=['POST'])
 def update_match():
-    if not request.host == config.coordinator_host:
-        abort(403)
     id = request.json["match_id"]
     result = request.json["match_result"]
     try:
@@ -57,8 +55,6 @@ def update_match():
 
 @app.route('/dchess/api/update_match_end', methods=['POST'])
 def update_match_end():
-    if not request.host == config.coordinator_host:
-        abort(403)
     id = request.json["match_id"]
     try:
         m = db.get_match_by_id(id)
@@ -74,8 +70,6 @@ def update_match_end():
 
 @app.route('/dchess/api/create_match', methods=['POST'])
 def create_match():
-    if not request.host == config.coordinator_host:
-        abort(403)
     user_id = request.json['user_id']
     user_nick = request.json['user_nick']
     opponent_id = request.json['opponent_id']
