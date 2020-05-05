@@ -19,8 +19,10 @@ def get_match():
         m = db.get_match_by_id(id)
         if m is not None:
             match = chess_util.get_game_data(id=id)
-            db_match = model_to_dict(m)
-            return jsonify(dict(success=True, match=match, db_match=db_match))
+            if match is not None:
+                db_match = model_to_dict(m)
+                return jsonify(dict(success=True, match=match, db_match=db_match))
+            return jsonify(dict(success=False, reason="match didn't start"))
         else:
             return jsonify(dict(success=False, reason="invalid match id"))
     except Exception as e:
@@ -75,10 +77,11 @@ def create_match():
     opponent_nick = request.json['opponent_nick']
     guild_id = request.json['guild_id']
 
-    clock_limit = None
-    clock_increment = None
+    # default
+    clock_limit = 300
+    clock_increment = 3
     try:
-        if request.json['clock_minutes'] and request.json['clock_minutes']:
+        if request.json['clock_minutes'] and request.json['clock_increment']:
             clock_limit = request.json['clock_minutes'] * 60
             clock_increment = request.json['clock_increment']
     except:
@@ -101,7 +104,7 @@ def create_match():
     try:
         game = chess_util.client.challenges.create_open(clock_limit=clock_limit, clock_increment=clock_increment)
         id = game['challenge']['id']
-        db_match = db.add_match(match_id=id, guild_id=guild_id)
+        db.add_match(match_id=id, guild_id=guild_id)
         return jsonify(dict(success=True, match=game, db_match = model_to_dict(db.get_match_by_id(id))))
     except Exception as e:
         print(e)

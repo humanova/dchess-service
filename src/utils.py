@@ -39,8 +39,10 @@ class ChessUtil:
         return io.BytesIO(file_obj)
 
     def get_game_data(self, id:str):
-        return self.client.games.export(game_id=id)
-
+        try:
+            return self.client.games.export(game_id=id)
+        except:
+            return None
     def get_image_from_id(self, id, move):
         svg = self.get_svg_from_id(id, move_count=move)
         return self.svg_to_png(svg)
