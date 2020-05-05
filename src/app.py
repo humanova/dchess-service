@@ -32,6 +32,8 @@ def get_match():
 
 @app.route('/dchess/api/update_match', methods=['POST'])
 def update_match():
+    if not request.host == config.coordinator_host:
+        abort(403)
     id = request.json["match_id"]
     result = request.json["match_result"]
     try:
@@ -56,6 +58,8 @@ def update_match():
 
 @app.route('/dchess/api/update_match_end', methods=['POST'])
 def update_match_end():
+    if not request.host == config.coordinator_host:
+        abort(403)
     id = request.json["match_id"]
     try:
         m = db.get_match_by_id(id)
@@ -71,6 +75,8 @@ def update_match_end():
 
 @app.route('/dchess/api/create_match', methods=['POST'])
 def create_match():
+    if not request.host == config.coordinator_host:
+        abort(403)
     user_id = request.json['user_id']
     user_nick = request.json['user_nick']
     opponent_id = request.json['opponent_id']
@@ -120,11 +126,11 @@ def get_match_preview(game_id, move):
         png_obj = None
         try:
             png_obj = chess_util.get_image_from_id(game_id, int(move))
+            return send_file(png_obj, mimetype='image/png')
         except Exception as e:
-            raise exceptions.InternalError(e, status_code=400)
-        return send_file(png_obj, mimetype='image/png')
+            return jsonify(dict(success=False))
     else:
-        raise exceptions.InvalidUsage("Invalid move number", status_code=400)
+        return jsonify(dict(success=False, reason="invalid match id"))
 
 
 @app.route('/dchess/api/get_player', methods=['POST'])
@@ -164,17 +170,15 @@ def get_guild():
         return jsonify(dict(success=False))
 
 
-@app.errorhandler(exceptions.InvalidUsage)
-@app.errorhandler(exceptions.InternalError)
-def handle_invalid_usage(error):
-    response = jsonify(error.to_dict())
-    response.status_code = error.status_code
-    return response
+@app.errorhandler(403)
+def handle_forbidden(e):
+    return render_template("error.html", error_code="403")
 
 
 @app.errorhandler(404)
-def not_found(e):
-    return render_template("404.html")
+def handle_not_found(e):
+    return render_template("error.html", error_code="404")
+
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=1338)
