@@ -80,7 +80,7 @@ def create_match():
     clock_limit = 300
     clock_increment = 3
     try:
-        if request.json['clock_minutes'] and request.json['clock_increment']:
+        if request.json['clock_minutes'] and not request.json['clock_increment'] == None:
             clock_limit = request.json['clock_minutes'] * 60
             clock_increment = request.json['clock_increment']
     except:
