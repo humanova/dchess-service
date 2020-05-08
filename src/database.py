@@ -281,7 +281,7 @@ class DB:
                 p1g = self.get_guild_player_by_id(player_id=p1.id, guild_id=guild_id)
                 p2g = self.get_guild_player_by_id(player_id=p2.id, guild_id=guild_id)
                 p1g_elo = p1g.elo
-                p1g.elo = p1g.elo + k * (score_p1 - self.calculate_expected_score(p1g_elo, p2g.lo))
+                p1g.elo = p1g.elo + k * (score_p1 - self.calculate_expected_score(p1g_elo, p2g.elo))
                 p2g.elo = p2g.elo + k * (score_p2 - self.calculate_expected_score(p2g.elo, p1g_elo))
 
                 p1g.save(only=[GuildPlayer.elo])
