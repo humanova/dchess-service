@@ -84,7 +84,6 @@ def create_match():
         # default settings (5+3 blitz match)
         clock_limit = 300
         clock_increment = 3
-        pass
 
     # bunch of db checks :(
     if db.get_guild_by_id(guild_id) is None:
