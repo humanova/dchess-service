@@ -1,8 +1,7 @@
 from flask import Flask, request, send_file, jsonify, abort, render_template
 from playhouse.shortcuts import model_to_dict
 import database
-import random
-from utils import ChessUtil
+from chessutil import ChessUtil
 import confparser
 
 config = confparser.get("config.json")
@@ -76,18 +75,18 @@ def create_match():
     opponent_nick = request.json['opponent_nick']
     guild_id = request.json['guild_id']
 
-    # default
-    clock_limit = 300
-    clock_increment = 3
     try:
+        # increment can be passed as 0 so we must check "== None" condition
         if request.json['clock_minutes'] and not request.json['clock_increment'] == None:
             clock_limit = request.json['clock_minutes'] * 60
             clock_increment = request.json['clock_increment']
     except:
+        # default settings (5+3 blitz match)
+        clock_limit = 300
+        clock_increment = 3
         pass
 
     # bunch of db checks :(
-    # todo : pls fix
     if db.get_guild_by_id(guild_id) is None:
         db.add_guild(guild_id)
 
@@ -101,7 +100,7 @@ def create_match():
     if db.get_guild_player_by_id(guild_id=guild_id, player_id=opponent_id) is None:
         db.add_guild_player(guild_id=guild_id, player_id=opponent_id)
     try:
-        game = chess_util.client.challenges.create_open(clock_limit=clock_limit, clock_increment=clock_increment)
+        game = chess_util.create_match(clock_limit=clock_limit, clock_increment=clock_increment)
         id = game['challenge']['id']
         db.add_match(match_id=id, guild_id=guild_id)
         return jsonify(dict(success=True, match=game, db_match = model_to_dict(db.get_match_by_id(id))))
@@ -116,14 +115,13 @@ def get_match_preview(game_id, move):
     if move == "last":
         move = 999
     if int(move) >= 0:
-        png_obj = None
         try:
-            png_obj = chess_util.get_image_from_id(game_id, int(move))
+            png_obj = chess_util.get_preview_from_id(game_id, int(move))
             return send_file(png_obj, mimetype='image/png')
         except Exception as e:
             return jsonify(dict(success=False))
     else:
-        return jsonify(dict(success=False, reason="invalid match id"))
+        return jsonify(dict(success=False, reason="invalid move number"))
 
 
 @app.route('/dchess/api/get_player', methods=['POST'])
@@ -131,8 +129,7 @@ def get_player():
     id = request.json["player_id"]
     guild_id = None
     try:
-        if request.json["guild_id"]:
-            guild_id = request.json["guild_id"]
+        guild_id = request.json["guild_id"]
     except:
         pass
     try:
@@ -143,7 +140,7 @@ def get_player():
             else:
                 return jsonify(dict(success=True, player=stats['player']))
         else:
-            return jsonify(dict(success=False, reason="invalid match id"))
+            return jsonify(dict(success=False, reason="invalid player id"))
     except Exception as e:
         print(e)
         return jsonify(dict(success=False))
@@ -157,7 +154,7 @@ def get_guild():
         if stats is not None:
             return jsonify(dict(success=True, guild=stats))
         else:
-            return jsonify(dict(success=False, reason="invalid match id"))
+            return jsonify(dict(success=False, reason="invalid guild id"))
     except Exception as e:
         print(e)
         return jsonify(dict(success=False))

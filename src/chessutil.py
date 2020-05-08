@@ -12,9 +12,29 @@ class ChessUtil:
         session = berserk.TokenSession(token)
         self.client = berserk.Client(session=session)
 
-    def get_svg_from_id(self, id: str, move_count: int):
+    def create_match(self, clock_limit:int, clock_increment:int):
+        try:
+            return self.client.challenges.create_open(clock_limit=clock_limit, clock_increment=clock_increment)
+        except:
+            return None
+
+    def get_game_data(self, id:str):
+        try:
+            return self.client.games.export(game_id=id)
+        except:
+            return None
+
+    def get_preview_from_id(self, id:str, move:int):
+        svg = self.get_svg_from_id(id, move_count=move)
+        try:
+            file_obj = cairosvg.svg2png(bytestring=svg, output_width=512, output_height=512)
+            return io.BytesIO(file_obj)
+        except Exception as e:
+            print(e)
+            return None
+
+    def get_svg_from_id(self, id:str, move_count:int):
         match_pgn = self.client.games.export(game_id=id, as_pgn=True, clocks=False)
-        #print(match_pgn)
         m_counter = 0
         game = chess.pgn.read_game(io.StringIO(match_pgn))
         board = game.board()
@@ -29,20 +49,5 @@ class ChessUtil:
             check = board.king(board.turn)
         return chess.svg.board(board=board, check=check, coordinates=False)
 
-    def svg_to_png(self, svg_data):
-        file_obj = None
-        try:
-            file_obj = cairosvg.svg2png(bytestring=svg_data, output_width=512, output_height=512)
-        except Exception as e:
-            print(e)
-            return None
-        return io.BytesIO(file_obj)
 
-    def get_game_data(self, id:str):
-        try:
-            return self.client.games.export(game_id=id)
-        except:
-            return None
-    def get_image_from_id(self, id, move):
-        svg = self.get_svg_from_id(id, move_count=move)
-        return self.svg_to_png(svg)
+

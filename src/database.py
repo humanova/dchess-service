@@ -2,13 +2,9 @@ from peewee import *
 import time
 from logger import logging
 from playhouse.shortcuts import model_to_dict
-import math
 
+ELO_CONSTANT = 32
 db = SqliteDatabase("db/dchess.db")
-
-class BaseModel(Model):
-    class Meta:
-        database = db
 
 
 class BaseModel(Model):
@@ -60,16 +56,12 @@ class DB:
         except Exception as e:
             logging.exception(f"[DB] Couldn't create tables, it may already exist in db : {e})")
 
-    def add_guild(self, guild_id):
+    def connect(self):
         try:
-            with db.atomic():
-                guild = Guild.create(
-                    id=guild_id
-                )
-                # logging.info(f"new guild -> : {g_id}")
-                return guild
+            db.connect()
+            self.connected = True
         except Exception as e:
-            logging.exception(f'[DB] Error while adding guild : {e}')
+            logging.exception(f"[DB] Couldn't connect to db : {e}")
 
     def add_player(self, player_id, player_nick):
         try:
@@ -90,19 +82,6 @@ class DB:
         except Exception as e:
             logging.exception(f'[DB] Error while adding player : {e}')
 
-    def add_guild_player(self, guild_id, player_id):
-        try:
-            with db.atomic():
-                guild_pl = GuildPlayer.create(
-                    guild_id=guild_id,
-                    player_id=player_id,
-                    elo=1500.0
-                )
-                # logging.info(f"new guild_player -> : {player_id}")
-                return guild_pl
-        except Exception as e:
-            logging.exception(f'[DB] Error while adding guild_player : {e}')
-
     def add_match(self, match_id, guild_id, white_id=-1, black_id=-1, match_ts=time.time(), result="unfinished"):
         try:
             with db.atomic():
@@ -120,12 +99,29 @@ class DB:
         except Exception as e:
             logging.exception(f'[DB] Error while adding match : {e}')
 
-    def connect(self):
+    def add_guild(self, guild_id):
         try:
-            db.connect()
-            self.connected = True
+            with db.atomic():
+                guild = Guild.create(
+                    id=guild_id
+                )
+                # logging.info(f"new guild -> : {g_id}")
+                return guild
         except Exception as e:
-            logging.exception(f"[DB] Couldn't connect to db : {e}")
+            logging.exception(f'[DB] Error while adding guild : {e}')
+
+    def add_guild_player(self, guild_id, player_id):
+        try:
+            with db.atomic():
+                guild_pl = GuildPlayer.create(
+                    guild_id=guild_id,
+                    player_id=player_id,
+                    elo=1500.0
+                )
+                # logging.info(f"new guild_player -> : {player_id}")
+                return guild_pl
+        except Exception as e:
+            logging.exception(f'[DB] Error while adding guild_player : {e}')
 
     def update_match(self, match_id, result, result_code=None, white_id=None, black_id=None):
         try:
@@ -141,6 +137,7 @@ class DB:
         except Exception as e:
             logging.exception(f'[DB] Error while updating match:{match_id} {e}')
 
+    # updates match and player(if known) stats
     def update_match_end(self, match_id, data):
         try:
             m = self.get_match_by_id(match_id)
@@ -149,7 +146,7 @@ class DB:
                 result_code = self.get_result_code(match_data=data)
                 self.update_match(match_id=match_id, result=status, result_code=result_code)
 
-                # if we know the players update their stats
+                # if we know player ids update their stats
                 if not m.white_player_id == -1 and not m.black_player_id == -1:
                     # send updated match obj
                     m = self.get_match_by_id(match_id)
@@ -173,7 +170,6 @@ class DB:
             white_pl.last_match_date = match.match_date
             black_pl.last_match_date = match.match_date
             res = match.result_code
-            print(res)
             w_score = int()
             b_score = int()
             if res == "1/2-1/2":
@@ -201,6 +197,7 @@ class DB:
 
             self.update_player_elo(white_pl, black_pl, score_p1=w_score, score_p2=b_score, guild_id=match.guild_id)
             logging.info(f'[DB] Players:{white_pl.id}, {black_pl.id} has been updated')
+
             return {"white_player": model_to_dict(white_pl), "black_player": model_to_dict(black_pl), "match": match}
         except Exception as e:
             logging.exception(f'[DB] Error while updating players:{white_pl.id}, {black_pl.id} {e}')
@@ -217,6 +214,7 @@ class DB:
         except Exception as e:
             logging.exception(f'[DB] Error while getting player stats:{player_id} {e}')
 
+    # returns guild players
     def get_guild_stats(self, guild_id):
         try:
             players = self.get_guild_players_by_id(guild_id)
@@ -272,20 +270,19 @@ class DB:
         return 1 / (1 + 10 ** ((p1_elo - p2_elo) / 400))
 
     def update_player_elo(self, p1: Player, p2: Player, score_p1, score_p2, guild_id=None):
+        k = ELO_CONSTANT
         try:
             # update general elo
             p1_elo = p1.elo
-            p2_elo = p2.elo
-            p1.elo = p1.elo + 32 * (score_p1 - self.calculate_expected_score(p1_elo, p2_elo))
-            p2.elo = p2.elo + 32 * (score_p2 - self.calculate_expected_score(p2_elo, p1_elo))
+            p1.elo = p1.elo + k * (score_p1 - self.calculate_expected_score(p1_elo, p2.elo))
+            p2.elo = p2.elo + k * (score_p2 - self.calculate_expected_score(p2.elo, p1_elo))
             # update guild elo
             if guild_id:
                 p1g = self.get_guild_player_by_id(player_id=p1.id, guild_id=guild_id)
                 p2g = self.get_guild_player_by_id(player_id=p2.id, guild_id=guild_id)
                 p1g_elo = p1g.elo
-                p2g_elo = p2g.elo
-                p1g.elo = p1g.elo + 32 * (score_p1 - self.calculate_expected_score(p1g_elo, p2g_elo))
-                p2g.elo = p2g.elo + 32 * (score_p2 - self.calculate_expected_score(p2g_elo, p1g_elo))
+                p1g.elo = p1g.elo + k * (score_p1 - self.calculate_expected_score(p1g_elo, p2g.lo))
+                p2g.elo = p2g.elo + k * (score_p2 - self.calculate_expected_score(p2g.elo, p1g_elo))
 
                 p1g.save(only=[GuildPlayer.elo])
                 p2g.save(only=[GuildPlayer.elo])
