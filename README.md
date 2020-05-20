@@ -45,7 +45,7 @@ if match is ended update match and player elos (if player ids are known)
 	"match_id" : "4fpT7YFN"
 }
 ```
-### *get_match_preview/<match_id>/<move>* : **GET**
+### *get_match_preview/match_id/move* : **GET**
 ```
 requests match data, renders the board and returns a png object
 ```
