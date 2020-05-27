@@ -113,6 +113,9 @@ def create_match():
 def get_match_preview(game_id, move):
     if move == "last":
         move = 999
+    elif not move.isdigit():
+        return jsonify(dict(success=False, reason="invalid move number"))
+
     if int(move) >= 0:
         try:
             png_obj = chess_util.get_preview_from_id(game_id, int(move))
