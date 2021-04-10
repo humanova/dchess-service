@@ -38,7 +38,7 @@ updates player ids of an ongoing match
 ```
 ### *update_match_end* : **POST**
 ```
-if match is ended update match and player elos (if player ids are known)
+if match has ended, update the match & elos (if player ids are known)
 ```
 ```json
 {
