@@ -3,3 +3,4 @@ cairosvg
 berserk
 Flask
 peewee
+imageio
