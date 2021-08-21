@@ -2,6 +2,8 @@
 ## About
 Chess service for Discord guilds.
 
+[Bot repository](https://github.com/humanova/dchess)
+
 Matches are played on lichess (account isn't necessary) and can be spectated. 
 - Custom Global/Guild elo
 - Player/guild stats
