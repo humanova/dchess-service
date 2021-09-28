@@ -10,7 +10,7 @@ Matches are played on lichess (account isn't necessary) and can be spectated.
 - Live board preview
 
 ## Example Client
-![preview](https://media.discordapp.net/attachments/637381930488430594/712762969079152750/api_preview.png)
+![preview](https://cdn.discordapp.com/attachments/469130513697734686/892525867622879242/api_preview.png)
 ## API Endpoints
 
 ### *create_match* : **POST**
