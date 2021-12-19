@@ -20,9 +20,9 @@ creates an open match and returns lichess api response data
 ```json
 {
 	"user_id" : 1234,
-	"user_nick" : "humanovan",
+	"user_nickname" : "username",
 	"opponent_id" : 1235,
-	"opponent_nick" : "test_user",
+	"opponent_nickname" : "test_user",
 	"guild_id" : 1337
 }
 ```

@@ -63,12 +63,12 @@ class DB:
         except Exception as e:
             logging.exception(f"[DB] Couldn't connect to db : {e}")
 
-    def add_player(self, player_id, player_nick):
+    def add_player(self, player_id, player_nickname):
         try:
             with db.atomic():
                 player = Player.create(
                     id=player_id,
-                    nickname=player_nick,
+                    nickname=player_nickname,
                     matches=0,
                     wins=0,
                     loses=0,

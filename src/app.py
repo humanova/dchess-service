@@ -70,9 +70,9 @@ def update_match_end():
 @app.route('/dchess/api/create_match', methods=['POST'])
 def create_match():
     user_id = request.json['user_id']
-    user_nick = request.json['user_nick']
+    user_nickname = request.json['user_nickname']
     opponent_id = request.json['opponent_id']
-    opponent_nick = request.json['opponent_nick']
+    opponent_nickname = request.json['opponent_nickname']
     guild_id = request.json['guild_id']
 
     try:
@@ -90,12 +90,12 @@ def create_match():
         db.add_guild(guild_id)
 
     if db.get_player_by_id(user_id) is None:
-        db.add_player(player_id=user_id, player_nick=user_nick)
+        db.add_player(player_id=user_id, player_nickname=user_nickname)
     if db.get_guild_player_by_id(guild_id=guild_id, player_id=user_id) is None:
         db.add_guild_player(guild_id=guild_id, player_id=user_id)
 
     if db.get_player_by_id(opponent_id) is None:
-        db.add_player(player_id=opponent_id, player_nick=opponent_nick)
+        db.add_player(player_id=opponent_id, player_nickname=opponent_nickname)
     if db.get_guild_player_by_id(guild_id=guild_id, player_id=opponent_id) is None:
         db.add_guild_player(guild_id=guild_id, player_id=opponent_id)
     try:
